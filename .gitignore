@@ -1,3 +1,5 @@
 *.class
 bin/
 workbench.xmi
+build/
+.gradle/

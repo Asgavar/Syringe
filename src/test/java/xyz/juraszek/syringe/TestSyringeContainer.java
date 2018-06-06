@@ -3,6 +3,8 @@ package xyz.juraszek.syringe;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
+import xyz.juraszek.syringe.examples.AnExampleClass;
+import xyz.juraszek.syringe.examples.AnExampleInterface;
 import xyz.juraszek.syringe.exceptions.TypeNotRegisteredException;
 
 class TestSyringeContainer {

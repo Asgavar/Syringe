@@ -49,41 +49,41 @@ public class SyringeContainer {
     this.instanceMapping.put(abstractionType, concreteInstance);
   }
 
-  public <T> T resolve(Class abstractionType) throws TypeNotRegisteredException,
+  public Object resolve(Class abstractionType) throws TypeNotRegisteredException,
                                                      InstantiationException,
                                                      IllegalAccessException {
     if (! isAbstractionTypeEligibleToBeResolved(abstractionType))
       throw new TypeNotRegisteredException();
     if (this.resolutionApproaches.get(abstractionType).equals(ResolutionApproach.BIND_CLASS))
-      return (T) resolveToClassInstance(abstractionType);
+      return resolveToClassInstance(abstractionType);
     else if (this.resolutionApproaches.get(abstractionType).equals(ResolutionApproach.BIND_INSTANCE))
-      return (T) resolveToConcreteInstance(abstractionType);
+      return resolveToConcreteInstance(abstractionType);
     else
       throw new Error("Podobno niemożliwe!");
   }
 
-  private <T> T resolveToClassInstance(Class abstractionType)
+  private Object resolveToClassInstance(Class abstractionType)
       throws IllegalAccessException, InstantiationException {
     Class implementationType = this.typeMapping.get(abstractionType);
     if (this.typesWhichAreRequiredToBeSingletons.contains(implementationType))
-      return (T) resolveToSingletonInstance(implementationType);
+      return resolveToSingletonInstance(implementationType);
     else
-      return (T) this.typeMapping.get(abstractionType).newInstance();
+      return this.typeMapping.get(abstractionType).newInstance();
   }
 
-  private <T> T resolveToSingletonInstance(Class singletonImplementationType)
+  private Object resolveToSingletonInstance(Class singletonImplementationType)
       throws InstantiationException, IllegalAccessException {
     if (this.alreadySpawnedSingletons.contains(singletonImplementationType)) {
-      return (T) this.spawnedSingletonInstances.get(singletonImplementationType);
+      return this.spawnedSingletonInstances.get(singletonImplementationType);
     }
     Object newInstance = singletonImplementationType.newInstance();
     this.alreadySpawnedSingletons.add(singletonImplementationType);
     this.spawnedSingletonInstances.put(singletonImplementationType, newInstance);
-    return (T) newInstance;
+    return newInstance;
   }
 
-  private<T> T resolveToConcreteInstance(Class abstractionType) {
-    return (T) this.instanceMapping.get(abstractionType);
+  private Object resolveToConcreteInstance(Class abstractionType) {
+    return this.instanceMapping.get(abstractionType);
   }
 
   private boolean isAbstractionTypeEligibleToBeResolved(Class abstractionType) {

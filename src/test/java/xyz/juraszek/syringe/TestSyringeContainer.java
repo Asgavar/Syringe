@@ -78,4 +78,19 @@ class TestSyringeContainer {
 
     assertNotSame(secondObject, firstObject);
   }
+
+  @Test
+  void concreteInstanceRegistration()
+      throws IllegalAccessException, TypeNotRegisteredException, InstantiationException {
+    SyringeContainer container = new SyringeContainer();
+    AnExampleClass concreteInstance = new AnExampleClass();
+
+    container.registerInstance(
+        AnExampleInterface.class,
+        concreteInstance
+    );
+    Object resolvedInstance = container.resolve(AnExampleInterface.class);
+
+    assertSame(concreteInstance, resolvedInstance);
+  }
 }

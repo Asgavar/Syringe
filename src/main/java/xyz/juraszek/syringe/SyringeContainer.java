@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import xyz.juraszek.syringe.exceptions.CircularDependenciesError;
 import xyz.juraszek.syringe.exceptions.TypeNotRegisteredException;
 
 public class SyringeContainer {
@@ -18,6 +19,7 @@ public class SyringeContainer {
   private Set<Class> typesWhichAreRequiredToBeSingletons;
   private Set<Class> alreadySpawnedSingletons;
   private Map<Class, Object> spawnedSingletonInstances;
+  private VisitedClassesTracker visitedClassesTracker;
 
   public SyringeContainer() {
     this.typeMapping = new HashMap<>();
@@ -26,6 +28,7 @@ public class SyringeContainer {
     this.typesWhichAreRequiredToBeSingletons = new HashSet<>();
     this.alreadySpawnedSingletons = new HashSet<>();
     this.spawnedSingletonInstances = new HashMap<>();
+    this.visitedClassesTracker = new VisitedClassesTracker();
   }
 
   public void registerType(Class implementationType,
@@ -91,11 +94,17 @@ public class SyringeContainer {
 
   private Object recursivelyInstantiateClass(Class classToInstantiate)
       throws IllegalAccessException, InvocationTargetException, InstantiationException {
+    if (this.visitedClassesTracker.wasClassAlreadyVisited(classToInstantiate))
+      throw new CircularDependenciesError();
+    else
+      this.visitedClassesTracker.markClassAsVisited(classToInstantiate);
     Constructor[] constructors = classToInstantiate.getDeclaredConstructors();
     Constructor maxParameterCountConstructor =
         Arrays.stream(constructors).max(Comparator.comparing(c -> c.getParameterCount())).get();
-    if (maxParameterCountConstructor.getParameterCount() == 0)
+    if (maxParameterCountConstructor.getParameterCount() == 0) {
+      this.visitedClassesTracker.reset();
       return maxParameterCountConstructor.newInstance();
+    }
     Class[] parameterTypes = maxParameterCountConstructor.getParameterTypes();
     return maxParameterCountConstructor.newInstance(
         Arrays.stream(parameterTypes).map(cls -> {
@@ -105,7 +114,7 @@ public class SyringeContainer {
             e.printStackTrace();
             return null;  // let's hope this won't happen
           }
-        })
+        }).toArray()
     );
   }
 

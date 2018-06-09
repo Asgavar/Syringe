@@ -6,6 +6,9 @@ import java.lang.reflect.InvocationTargetException;
 import org.junit.jupiter.api.Test;
 import xyz.juraszek.syringe.examples.AnExampleClass;
 import xyz.juraszek.syringe.examples.AnExampleInterface;
+import xyz.juraszek.syringe.examples.CircularlyDependentOne;
+import xyz.juraszek.syringe.examples.CircularlyDependentTwo;
+import xyz.juraszek.syringe.exceptions.CircularDependenciesError;
 import xyz.juraszek.syringe.exceptions.TypeNotRegisteredException;
 
 class TestSyringeContainer {
@@ -96,5 +99,18 @@ class TestSyringeContainer {
     Object resolvedInstance = container.resolve(AnExampleInterface.class);
 
     assertSame(concreteInstance, resolvedInstance);
+  }
+
+  @Test
+  void circularDependencyThrows() {
+    SyringeContainer container = new SyringeContainer();
+
+    container.registerType(CircularlyDependentOne.class, CircularlyDependentOne.class, false);
+    container.registerType(CircularlyDependentTwo.class, CircularlyDependentTwo.class, false);
+
+    assertThrows(
+        CircularDependenciesError.class,
+        () -> container.resolve(CircularlyDependentOne.class)
+    );
   }
 }

@@ -2,6 +2,7 @@ package xyz.juraszek.syringe;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.lang.reflect.InvocationTargetException;
 import org.junit.jupiter.api.Test;
 import xyz.juraszek.syringe.examples.AnExampleClass;
 import xyz.juraszek.syringe.examples.AnExampleInterface;
@@ -11,7 +12,8 @@ class TestSyringeContainer {
 
   @Test
   void simpleRegisterAndResolve()
-      throws IllegalAccessException, TypeNotRegisteredException, InstantiationException {
+      throws IllegalAccessException, TypeNotRegisteredException, InstantiationException,
+             InvocationTargetException {
     SyringeContainer container = new SyringeContainer();
 
     container.registerType(AnExampleInterface.class, AnExampleClass.class, false);
@@ -32,7 +34,7 @@ class TestSyringeContainer {
 
   @Test
   void instantiatingSingletonTwiceResultsInTheSameObject()
-      throws IllegalAccessException, TypeNotRegisteredException, InstantiationException {
+      throws IllegalAccessException, TypeNotRegisteredException, InstantiationException, InvocationTargetException {
     SyringeContainer container = new SyringeContainer();
 
     container.registerType(
@@ -48,7 +50,7 @@ class TestSyringeContainer {
 
   @Test
   void markingTypeAsSingletonAfterItsRegistrationWorks()
-      throws IllegalAccessException, TypeNotRegisteredException, InstantiationException {
+      throws IllegalAccessException, TypeNotRegisteredException, InstantiationException, InvocationTargetException {
     SyringeContainer container = new SyringeContainer();
 
     container.registerType(
@@ -65,7 +67,8 @@ class TestSyringeContainer {
 
   @Test
   void whenTypeIsNotSingletonEachResolveShouldReturnADifferentObject()
-      throws IllegalAccessException, TypeNotRegisteredException, InstantiationException {
+      throws IllegalAccessException, TypeNotRegisteredException, InstantiationException,
+             InvocationTargetException {
     SyringeContainer container = new SyringeContainer();
 
     container.registerType(
@@ -81,7 +84,8 @@ class TestSyringeContainer {
 
   @Test
   void concreteInstanceRegistration()
-      throws IllegalAccessException, TypeNotRegisteredException, InstantiationException {
+      throws IllegalAccessException, TypeNotRegisteredException, InstantiationException,
+             InvocationTargetException {
     SyringeContainer container = new SyringeContainer();
     AnExampleClass concreteInstance = new AnExampleClass();
 

@@ -1,5 +1,9 @@
 package xyz.juraszek.syringe;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -50,8 +54,7 @@ public class SyringeContainer {
   }
 
   public Object resolve(Class abstractionType) throws TypeNotRegisteredException,
-                                                     InstantiationException,
-                                                     IllegalAccessException {
+      InstantiationException, IllegalAccessException, InvocationTargetException {
     if (! isAbstractionTypeEligibleToBeResolved(abstractionType))
       throw new TypeNotRegisteredException();
     if (this.resolutionApproaches.get(abstractionType).equals(ResolutionApproach.BIND_CLASS))
@@ -63,20 +66,20 @@ public class SyringeContainer {
   }
 
   private Object resolveToClassInstance(Class abstractionType)
-      throws IllegalAccessException, InstantiationException {
+      throws IllegalAccessException, InstantiationException, InvocationTargetException {
     Class implementationType = this.typeMapping.get(abstractionType);
     if (this.typesWhichAreRequiredToBeSingletons.contains(implementationType))
       return resolveToSingletonInstance(implementationType);
     else
-      return this.typeMapping.get(abstractionType).newInstance();
+      return recursivelyInstantiateClass(implementationType);
   }
 
   private Object resolveToSingletonInstance(Class singletonImplementationType)
-      throws InstantiationException, IllegalAccessException {
+      throws InstantiationException, IllegalAccessException, InvocationTargetException {
     if (this.alreadySpawnedSingletons.contains(singletonImplementationType)) {
       return this.spawnedSingletonInstances.get(singletonImplementationType);
     }
-    Object newInstance = singletonImplementationType.newInstance();
+    Object newInstance = recursivelyInstantiateClass(singletonImplementationType);
     this.alreadySpawnedSingletons.add(singletonImplementationType);
     this.spawnedSingletonInstances.put(singletonImplementationType, newInstance);
     return newInstance;
@@ -84,6 +87,26 @@ public class SyringeContainer {
 
   private Object resolveToConcreteInstance(Class abstractionType) {
     return this.instanceMapping.get(abstractionType);
+  }
+
+  private Object recursivelyInstantiateClass(Class classToInstantiate)
+      throws IllegalAccessException, InvocationTargetException, InstantiationException {
+    Constructor[] constructors = classToInstantiate.getDeclaredConstructors();
+    Constructor maxParameterCountConstructor =
+        Arrays.stream(constructors).max(Comparator.comparing(c -> c.getParameterCount())).get();
+    if (maxParameterCountConstructor.getParameterCount() == 0)
+      return maxParameterCountConstructor.newInstance();
+    Class[] parameterTypes = maxParameterCountConstructor.getParameterTypes();
+    return maxParameterCountConstructor.newInstance(
+        Arrays.stream(parameterTypes).map(cls -> {
+          try {
+            return resolve(cls);
+          } catch (Exception e) {
+            e.printStackTrace();
+            return null;  // let's hope this won't happen
+          }
+        })
+    );
   }
 
   private boolean isAbstractionTypeEligibleToBeResolved(Class abstractionType) {

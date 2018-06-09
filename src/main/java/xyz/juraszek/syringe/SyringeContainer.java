@@ -1,7 +1,10 @@
 package xyz.juraszek.syringe;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -9,6 +12,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import xyz.juraszek.syringe.annotations.DependencyMethod;
 import xyz.juraszek.syringe.exceptions.CircularDependenciesError;
 import xyz.juraszek.syringe.exceptions.TypeNotRegisteredException;
 
@@ -58,14 +62,46 @@ public class SyringeContainer {
 
   public Object resolve(Class abstractionType) throws TypeNotRegisteredException,
       InstantiationException, IllegalAccessException, InvocationTargetException {
+    Object instantiatedObject = null;
+
     if (! isAbstractionTypeEligibleToBeResolved(abstractionType))
       throw new TypeNotRegisteredException();
     if (this.resolutionApproaches.get(abstractionType).equals(ResolutionApproach.BIND_CLASS))
-      return resolveToClassInstance(abstractionType);
+      instantiatedObject = resolveToClassInstance(abstractionType);
     else if (this.resolutionApproaches.get(abstractionType).equals(ResolutionApproach.BIND_INSTANCE))
-      return resolveToConcreteInstance(abstractionType);
+      instantiatedObject = resolveToConcreteInstance(abstractionType);
     else
       throw new Error("Podobno niemożliwe!");
+
+    buildUp(instantiatedObject);
+
+    return instantiatedObject;
+  }
+
+  public void buildUp(Object alreadyExistingInstance) {
+    Method[] annotated = annotatedDependencyMethods(alreadyExistingInstance.getClass());
+    for (Method method : annotated) {
+      System.out.println(method);
+    }
+  }
+
+  private Method[] annotatedDependencyMethods(Class classToBeSearched) {
+    ArrayList<Method> annotated = new ArrayList<>();
+
+    for (Method method : classToBeSearched.getDeclaredMethods()) {
+      // TODO: dlaczego to nie działa?
+      System.out.println(method.isAnnotationPresent(DependencyMethod.class));
+      for (Annotation annotation : method.getDeclaredAnnotations()) {
+        System.out.println(annotation);
+        if (annotation.getClass().equals(DependencyMethod.class)) {
+          annotated.add(method);
+          break;
+        }
+      }
+    }
+
+    Method[] toReturnAsArray = new Method[annotated.size()];
+    return annotated.toArray(toReturnAsArray);
   }
 
   private Object resolveToClassInstance(Class abstractionType)

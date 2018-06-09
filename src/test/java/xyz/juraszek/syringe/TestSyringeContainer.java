@@ -4,10 +4,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.lang.reflect.InvocationTargetException;
 import org.junit.jupiter.api.Test;
+import xyz.juraszek.syringe.annotations.DependencyMethod;
 import xyz.juraszek.syringe.examples.AnExampleClass;
 import xyz.juraszek.syringe.examples.AnExampleInterface;
 import xyz.juraszek.syringe.examples.CircularlyDependentOne;
 import xyz.juraszek.syringe.examples.CircularlyDependentTwo;
+import xyz.juraszek.syringe.examples.DependencyMethodExample;
 import xyz.juraszek.syringe.exceptions.CircularDependenciesError;
 import xyz.juraszek.syringe.exceptions.TypeNotRegisteredException;
 
@@ -112,5 +114,19 @@ class TestSyringeContainer {
         CircularDependenciesError.class,
         () -> container.resolve(CircularlyDependentOne.class)
     );
+  }
+
+  @Test
+  void injectingIntoMethod()
+      throws InvocationTargetException, InstantiationException, IllegalAccessException,
+             TypeNotRegisteredException {
+    SyringeContainer container = new SyringeContainer();
+
+    container.registerType(AnExampleInterface.class, AnExampleClass.class, false);
+    container.registerType(DependencyMethodExample.class, DependencyMethodExample.class, false);
+    DependencyMethodExample instantiatedObject =
+        (DependencyMethodExample) container.resolve(DependencyMethodExample.class);
+
+    //assert(instantiatedObject.toBeInjected != null);
   }
 }

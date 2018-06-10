@@ -4,12 +4,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.lang.reflect.InvocationTargetException;
 import org.junit.jupiter.api.Test;
-import xyz.juraszek.syringe.annotations.DependencyMethod;
 import xyz.juraszek.syringe.examples.AnExampleClass;
 import xyz.juraszek.syringe.examples.AnExampleInterface;
+import xyz.juraszek.syringe.examples.BothConstructorAndDependencyMethods;
 import xyz.juraszek.syringe.examples.CircularlyDependentOne;
 import xyz.juraszek.syringe.examples.CircularlyDependentTwo;
 import xyz.juraszek.syringe.examples.DependencyMethodExample;
+import xyz.juraszek.syringe.examples.NonTrivialA;
+import xyz.juraszek.syringe.examples.NonTrivialB;
+import xyz.juraszek.syringe.examples.NonTrivialC;
+import xyz.juraszek.syringe.examples.NonTrivialD;
 import xyz.juraszek.syringe.exceptions.CircularDependenciesError;
 import xyz.juraszek.syringe.exceptions.TypeNotRegisteredException;
 
@@ -55,7 +59,8 @@ class TestSyringeContainer {
 
   @Test
   void markingTypeAsSingletonAfterItsRegistrationWorks()
-      throws IllegalAccessException, TypeNotRegisteredException, InstantiationException, InvocationTargetException {
+      throws IllegalAccessException, TypeNotRegisteredException, InstantiationException,
+             InvocationTargetException {
     SyringeContainer container = new SyringeContainer();
 
     container.registerType(
@@ -117,6 +122,21 @@ class TestSyringeContainer {
   }
 
   @Test
+  void nonTrivialDependencyChain()
+      throws InvocationTargetException, InstantiationException, IllegalAccessException,
+             TypeNotRegisteredException {
+    SyringeContainer container = new SyringeContainer();
+
+    container.registerType(NonTrivialA.class, NonTrivialA.class, false);
+    container.registerType(NonTrivialB.class, NonTrivialB.class, false);
+    container.registerType(NonTrivialC.class, NonTrivialC.class, false);
+    container.registerType(NonTrivialD.class, NonTrivialD.class, false);
+    NonTrivialA resolvedA = (NonTrivialA) container.resolve(NonTrivialA.class);
+
+    assertNotNull(resolvedA.b);
+  }
+
+  @Test
   void injectingIntoMethod()
       throws InvocationTargetException, InstantiationException, IllegalAccessException,
              TypeNotRegisteredException {
@@ -127,6 +147,23 @@ class TestSyringeContainer {
     DependencyMethodExample instantiatedObject =
         (DependencyMethodExample) container.resolve(DependencyMethodExample.class);
 
-    assert(instantiatedObject.toBeInjected != null);
+    assertNotNull(instantiatedObject.toBeInjected);
+  }
+
+  @Test
+  void buildingUpAlreadyInstantiatedObject()
+      throws InvocationTargetException, IllegalAccessException {
+    SyringeContainer container = new SyringeContainer();
+    container.registerType(AnExampleInterface.class, AnExampleClass.class, false);
+    BothConstructorAndDependencyMethods halfBuiltInstance =
+        new BothConstructorAndDependencyMethods(new AnExampleClass());
+
+    assertNull(halfBuiltInstance.second);
+    assertNull(halfBuiltInstance.third);
+
+    container.buildUp(halfBuiltInstance);
+
+    assertNotNull(halfBuiltInstance.second);
+    assertNotNull(halfBuiltInstance.third);
   }
 }

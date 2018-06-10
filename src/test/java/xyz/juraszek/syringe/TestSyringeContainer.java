@@ -127,6 +127,6 @@ class TestSyringeContainer {
     DependencyMethodExample instantiatedObject =
         (DependencyMethodExample) container.resolve(DependencyMethodExample.class);
 
-    //assert(instantiatedObject.toBeInjected != null);
+    assert(instantiatedObject.toBeInjected != null);
   }
 }

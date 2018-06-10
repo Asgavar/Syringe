@@ -78,10 +78,22 @@ public class SyringeContainer {
     return instantiatedObject;
   }
 
-  public void buildUp(Object alreadyExistingInstance) {
+  public void buildUp(Object alreadyExistingInstance)
+      throws InvocationTargetException, IllegalAccessException {
     Method[] annotated = annotatedDependencyMethods(alreadyExistingInstance.getClass());
     for (Method method : annotated) {
-      System.out.println(method);
+      Class[] typesToBeInjected = method.getParameterTypes();
+      method.invoke(
+          alreadyExistingInstance,
+          Arrays.stream(typesToBeInjected).map(cls -> {
+            try {
+              return resolve(cls);
+            } catch (Exception e) {
+              e.printStackTrace();
+              return null;
+            }
+          }).toArray()
+      );
     }
   }
 
@@ -89,19 +101,11 @@ public class SyringeContainer {
     ArrayList<Method> annotated = new ArrayList<>();
 
     for (Method method : classToBeSearched.getDeclaredMethods()) {
-      // TODO: dlaczego to nie działa?
-      System.out.println(method.isAnnotationPresent(DependencyMethod.class));
-      for (Annotation annotation : method.getDeclaredAnnotations()) {
-        System.out.println(annotation);
-        if (annotation.getClass().equals(DependencyMethod.class)) {
-          annotated.add(method);
-          break;
-        }
-      }
+      if (method.isAnnotationPresent(DependencyMethod.class))
+        annotated.add(method);
     }
 
-    Method[] toReturnAsArray = new Method[annotated.size()];
-    return annotated.toArray(toReturnAsArray);
+    return annotated.toArray(new Method[0]);
   }
 
   private Object resolveToClassInstance(Class abstractionType)
